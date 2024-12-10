@@ -1,182 +1,201 @@
-# YouTube Transcript Tool - Product Requirements Document
+# Aptos NFT and Token Launch System - Product Requirements Document
 
 ## Purpose and Scope
 ### Goal
-Create a command-line tool that fetches English transcripts from YouTube videos using only the video URL.
+Create a comprehensive system for launching NFTs and tokens on the Aptos blockchain with basic minting and listing functionality.
 
 ### Scope
-- Support publicly available YouTube videos with transcripts
-- No authentication or API keys required
-- Focus on English transcripts only
-- Command-line interface only
+- Support for NFT and token deployment on Aptos
+- Integration with Aptos testnet
+- Basic minting functionality
+- Marketplace listing capabilities
+- Token management features
 
 ### Out of Scope
-- Videos without transcripts
-- Private or age-restricted videos
-- Non-English transcripts
-- GUI interface
-- Transcript editing capabilities
+- Production deployment
+- Complex trading mechanisms
+- Cross-chain functionality
+- Advanced governance features
+- Custom marketplace implementation
 
 ## System Architecture
 
 ### Components
-1. Input Parser
-   - Validates YouTube URL format
-   - Extracts video ID from URL
-   - Handles various YouTube URL formats (full, shortened, embedded)
+1. Frontend (Web-based UI)
+   - React.js interface for token creation
+   - Wallet integration (Petra, Martian)
+   - Token management dashboard
+   - Transaction monitoring
 
-2. Transcript Fetcher
-   - Makes HTTP requests to YouTube
-   - Retrieves available transcripts
-   - Selects English transcript if available
-   - Processes raw transcript data
+2. Backend (Node.js)
+   - RESTful API endpoints
+   - Smart contract interaction
+   - IPFS metadata storage
+   - Transaction management
 
-3. Output Formatter
-   - Cleans transcript text
-   - Formats output for readability
-   - Handles stdout writing
+3. Blockchain Integration
+   - Aptos smart contracts
+   - Token standards implementation
+   - Event listeners
+   - Transaction processors
 
 ### Data Flow
-1. User inputs YouTube URL via command line
-2. System validates URL and extracts video ID
-3. System fetches available transcripts
-4. System processes and formats English transcript
-5. System outputs formatted transcript to stdout
+1. User initiates token creation via UI
+2. Backend validates and processes request
+3. Smart contract interaction for minting
+4. Token listing on marketplace
+5. Event tracking and status updates
 
 ### External Dependencies
-- `youtube-transcript-api`: Primary library for fetching transcripts
-- Python 3.x runtime environment
-- Network connectivity
-- Standard Python libraries (re, sys, argparse)
+- Aptos SDK
+- Node.js runtime
+- IPFS for metadata storage
+- Web3 wallet providers
+- Aptos testnet node
 
 ## Feature Requirements
 
 ### Core Features
-1. URL Validation
-   - Accept and validate YouTube URL input
-   - Support various YouTube URL formats
-   - Provide clear error messages for invalid URLs
+1. Token Minting
+   - Configure token parameters
+   - Upload and pin media to IPFS
+   - Execute minting transaction
+   - Verify token creation
 
-2. Transcript Retrieval
-   - Fetch available transcripts
-   - Select English transcript
-   - Handle missing transcript scenarios
-   - Support timeout and retry mechanisms
+2. Marketplace Integration
+   - List tokens for sale
+   - Set pricing and duration
+   - Configure royalties
+   - Track listing status
 
-3. Output Formatting
-   - Clean text formatting
-   - Proper spacing and line breaks
-   - Human-readable output
-   - Clear error messages
+3. Token Management
+   - View owned tokens
+   - Monitor transactions
+   - Update metadata
+   - Transfer tokens
 
 ### Acceptance Criteria
-- Tool accepts valid YouTube URL and returns transcript
-- Tool handles invalid URLs with appropriate error messages
-- Tool handles missing transcripts gracefully
-- Output is clean and readable
-- Performance is acceptable (< 5s for most videos)
+- Successful token minting on testnet
+- Proper marketplace listing
+- Accurate transaction tracking
+- Clean UI/UX implementation
+- Reliable error handling
 
 ## Testing Strategy
 
 ### Unit Tests
-1. URL Validation Tests
-   - Test various URL formats
-   - Test invalid URLs
-   - Test edge cases (empty string, non-YouTube URLs)
+1. Smart Contract Tests
+   - Minting functionality
+   - Transfer operations
+   - Access controls
+   - Error conditions
 
-2. Transcript Processing Tests
-   - Test transcript cleaning
-   - Test formatting functions
-   - Test error handling
+2. API Tests
+   - Endpoint validation
+   - Request processing
+   - Error handling
+   - Data validation
 
 ### Integration Tests
-1. Basic Functionality
-   - Test with short video (< 1 minute)
-   - Test with medium video (5-10 minutes)
-   - Test with long video (> 30 minutes)
+1. End-to-End Flow
+   - Complete minting process
+   - Marketplace integration
+   - Transaction verification
+   - Event handling
 
-2. Error Handling
-   - Test with private videos
-   - Test with videos without transcripts
-   - Test with network issues
+2. Error Scenarios
+   - Network issues
+   - Invalid parameters
+   - Insufficient funds
+   - Failed transactions
 
 ### Test Cases
 1. Happy Path
-   - Known video with English transcript
-   - Various URL formats
-   - Different video lengths
+   - Basic token minting
+   - Successful listing
+   - Token transfer
+   - Metadata updates
 
 2. Error Cases
-   - Invalid URLs
-   - Missing transcripts
-   - Network timeout
-   - Non-English only videos
+   - Invalid token parameters
+   - Failed transactions
+   - Network timeouts
+   - Authorization issues
 
 ## Build Instructions
 
 ### Setup
-1. Create Python virtual environment
-2. Install required dependencies:
+1. Install dependencies:
    ```bash
-   pip install youtube-transcript-api
+   npm install @aptos-labs/ts-sdk
+   npm install ipfs-http-client
    ```
 
-### Development
-1. Follow PEP 8 style guide
-2. Use type hints
-3. Include docstrings for all functions
-4. Keep functions focused and small
+2. Configure environment:
+   - Set up Aptos testnet connection
+   - Configure IPFS endpoint
+   - Set up development wallet
+
+### Development Guidelines
+1. Follow ESLint configuration
+2. Use TypeScript for type safety
+3. Document all functions
+4. Implement proper error handling
 
 ### Code Style Guidelines
-- Follow PEP 8 conventions
-- Use meaningful variable names
-- Include type hints
-- Write comprehensive docstrings
-- Keep functions under 20 lines
-- Use consistent naming conventions
+- Consistent formatting (Prettier)
+- Clear function documentation
+- Type definitions for all components
+- Proper error handling patterns
+- Clean code principles
 
 ## Troubleshooting Guide
 
 ### Common Issues
 1. Network Connectivity
-   - Check internet connection
-   - Verify YouTube accessibility
-   - Check for rate limiting
+   - Check RPC endpoint
+   - Verify testnet status
+   - Validate wallet connection
 
-2. URL Issues
-   - Verify URL format
-   - Check video accessibility
-   - Verify video has captions
+2. Transaction Failures
+   - Check gas settings
+   - Verify account balance
+   - Validate parameters
 
-3. Transcript Issues
-   - Check for available transcripts
-   - Verify English transcript exists
-   - Check for format changes
+3. Smart Contract Issues
+   - Review deployment status
+   - Check contract parameters
+   - Verify permissions
 
 ### Support Steps
-1. Network Issues
-   - Run network connectivity test
-   - Check YouTube API status
-   - Verify proxy settings if applicable
+1. Verify Aptos network status
+2. Check wallet configuration
+3. Review transaction logs
+4. Consult Aptos documentation
 
-2. URL Problems
-   - Validate URL format
-   - Test video accessibility in browser
-   - Check video permissions
+## Future Enhancements
+1. Token Types
+   - Additional token standards
+   - Custom implementations
+   - Upgradeable contracts
 
-3. Transcript Errors
-   - Verify transcript availability
-   - Check for API changes
-   - Review error messages
+2. User Authentication
+   - Multi-wallet support
+   - Role-based access
+   - Enhanced security
+
+3. Smart Contract Features
+   - Advanced trading mechanisms
+   - Automated market making
+   - Governance implementation
 
 ## Version Control
 - GitHub repository: https://github.com/manansh11/AI-Testing
 - Branch naming: feature/, bugfix/, hotfix/
 - Commit messages: Follow conventional commits
 
-## Future Enhancements (Out of Current Scope)
-- Support for multiple languages
-- GUI interface
-- Transcript download in various formats
-- Batch processing of multiple URLs
-- Authentication support for private videos
+## Documentation Resources
+- [Aptos Developer Documentation](https://aptos.dev)
+- [Move Language Reference](https://move-language.github.io/move/)
+- [Aptos SDK Documentation](https://aptos.dev/sdks/ts-sdk/typescript-sdk)
+- [IPFS Documentation](https://docs.ipfs.tech)
