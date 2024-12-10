@@ -1,6 +1,7 @@
 """Module for fetching YouTube video transcripts."""
 import logging
 from typing import Optional, Dict, Any, List
+from pytube import YouTube
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from youtube_transcript_api._errors import (
     NoTranscriptFound,
@@ -38,43 +39,49 @@ class TranscriptFetcher:
         try:
             logger.debug(f"Attempting to fetch transcripts for video ID: {video_id}")
 
-            # First, try to list all available transcripts
+            # Try pytube first
             try:
-                logger.debug("Listing all available transcripts...")
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                logger.debug("Attempting to fetch transcript using pytube...")
+                url = f"https://www.youtube.com/watch?v={video_id}"
+                yt = YouTube(url)
 
-                logger.debug("Available transcripts:")
-                available_languages = []
-                for transcript in transcript_list:
-                    available_languages.append(transcript.language_code)
-                    logger.debug(f"- {transcript.language_code}")
-
-                if not available_languages:
-                    logger.error("No transcripts available for this video")
+                if not yt.captions:
+                    logger.debug("No captions found in pytube")
                     raise NoTranscriptAvailable()
 
-                # Try English variants first
-                english_variants = ['en', 'en-US', 'en-GB']
-                for lang in english_variants:
-                    if lang in available_languages:
-                        logger.debug(f"Found {lang} transcript, fetching...")
-                        return YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
+                # Try to get English captions
+                caption = None
+                for c in yt.captions:
+                    logger.debug(f"Found caption track: {c.code}")
+                    if c.code.startswith('en'):
+                        caption = c
+                        break
 
-                # If no English transcript, get the first available and translate
-                logger.debug("No English transcript found, using first available transcript...")
-                first_transcript = transcript_list.find_transcript(available_languages)
-                logger.debug(f"Translating from {first_transcript.language_code} to English...")
-                return first_transcript.translate('en').fetch()
+                if caption:
+                    logger.debug(f"Found English caption track: {caption.code}")
+                    xml_captions = caption.xml_captions
+                    # Convert pytube format to match youtube-transcript-api format
+                    return [
+                        {
+                            "text": entry.text,
+                            "start": float(entry.start),
+                            "duration": float(entry.duration)
+                        }
+                        for entry in xml_captions
+                    ]
 
-            except Exception as e:
-                logger.debug(f"Error listing transcripts: {str(e)}")
-                # Fallback: try direct transcript retrieval
-                logger.debug("Attempting direct transcript retrieval...")
-                return YouTubeTranscriptApi.get_transcript(
-                    video_id,
-                    languages=['en', 'en-US', 'en-GB'],
-                    continue_after_error=True
-                )
+            except Exception as pytube_error:
+                logger.debug(f"Pytube attempt failed: {str(pytube_error)}")
+                # Fall back to youtube-transcript-api
+                logger.debug("Falling back to youtube-transcript-api...")
+                try:
+                    return YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+                except NoTranscriptFound:
+                    # Try to get any transcript and translate to English
+                    transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
+                    transcript = next(iter(transcripts))
+                    logger.debug(f"Translating from {transcript.language_code} to English...")
+                    return transcript.translate('en').fetch()
 
         except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable,
                 NoTranscriptAvailable, TranslationLanguageNotAvailable) as e:
