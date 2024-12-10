@@ -1,5 +1,6 @@
 """Module for fetching YouTube video transcripts."""
 import logging
+import requests
 from typing import Optional, Dict, Any, List
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from youtube_transcript_api._errors import (
@@ -16,6 +17,26 @@ logger = logging.getLogger(__name__)
 
 class TranscriptFetcher:
     """Class responsible for fetching and processing YouTube transcripts."""
+
+    @staticmethod
+    def _get_cookies(video_id: str) -> Dict[str, str]:
+        """
+        Get necessary cookies for accessing YouTube content.
+
+        Args:
+            video_id (str): The YouTube video ID.
+
+        Returns:
+            Dict[str, str]: Dictionary of cookies.
+        """
+        try:
+            # Make a request to the video page to get cookies
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            response = requests.get(url)
+            return response.cookies.get_dict()
+        except Exception as e:
+            logger.warning(f"Failed to get cookies: {str(e)}")
+            return {}
 
     @staticmethod
     def get_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
@@ -38,9 +59,13 @@ class TranscriptFetcher:
         try:
             logger.debug(f"Attempting to fetch transcripts for video ID: {video_id}")
 
+            # Get cookies for authentication
+            cookies = TranscriptFetcher._get_cookies(video_id)
+            logger.debug("Retrieved cookies for authentication")
+
             # First, list available transcripts
             logger.debug("Listing available transcripts...")
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, cookies=cookies)
 
             logger.debug("Available transcripts:")
             for transcript in transcript_list:
