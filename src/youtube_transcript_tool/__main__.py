@@ -4,7 +4,13 @@ import argparse
 from .url_parser import URLParser
 from .transcript_fetcher import TranscriptFetcher
 from .output_formatter import OutputFormatter
-from youtube_transcript_api import TranscriptsDisabled, NoTranscriptFound
+from youtube_transcript_api import (
+    TranscriptsDisabled,
+    NoTranscriptFound,
+    VideoUnavailable,
+    NoTranscriptAvailable,
+    TranslationLanguageNotAvailable,
+)
 
 
 def main() -> int:
@@ -48,6 +54,15 @@ def main() -> int:
         return 1
     except NoTranscriptFound:
         print("Error: No English transcript found for this video.", file=sys.stderr)
+        return 1
+    except VideoUnavailable:
+        print("Error: The video is not available or requires authentication.", file=sys.stderr)
+        return 1
+    except NoTranscriptAvailable:
+        print("Error: No transcripts are available for this video.", file=sys.stderr)
+        return 1
+    except TranslationLanguageNotAvailable:
+        print("Error: English translation is not available for this video.", file=sys.stderr)
         return 1
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
