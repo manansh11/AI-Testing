@@ -45,30 +45,39 @@ class TranscriptFetcher:
                 url = f"https://www.youtube.com/watch?v={video_id}"
                 yt = YouTube(url)
 
-                if not yt.captions:
+                captions = yt.captions
+                logger.debug(f"Available caption tracks: {list(captions.keys()) if captions else 'None'}")
+
+                if not captions:
                     logger.debug("No captions found in pytube")
                     raise NoTranscriptAvailable()
 
-                # Try to get English captions
+                # Try English variants
+                english_codes = ['en', 'a.en', 'en-GB', 'en-US']
                 caption = None
-                for c in yt.captions:
-                    logger.debug(f"Found caption track: {c.code}")
-                    if c.code.startswith('en'):
-                        caption = c
+                for code in english_codes:
+                    if code in captions:
+                        caption = captions[code]
                         break
 
                 if caption:
                     logger.debug(f"Found English caption track: {caption.code}")
-                    xml_captions = caption.xml_captions
-                    # Convert pytube format to match youtube-transcript-api format
-                    return [
-                        {
-                            "text": entry.text,
-                            "start": float(entry.start),
-                            "duration": float(entry.duration)
-                        }
-                        for entry in xml_captions
-                    ]
+                    caption_xml = caption.xml_captions
+                    # Parse the XML captions into our format
+                    from xml.etree import ElementTree
+                    root = ElementTree.fromstring(caption_xml)
+                    transcript = []
+                    for text in root.findall('.//text'):
+                        start = float(text.get('start', 0))
+                        duration = float(text.get('dur', 0))
+                        content = text.text.strip() if text.text else ""
+                        if content:
+                            transcript.append({
+                                "text": content,
+                                "start": start,
+                                "duration": duration
+                            })
+                    return transcript
 
             except Exception as pytube_error:
                 logger.debug(f"Pytube attempt failed: {str(pytube_error)}")
