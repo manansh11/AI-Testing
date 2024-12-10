@@ -1,4 +1,5 @@
 """Module for fetching YouTube video transcripts."""
+import logging
 from typing import Optional, Dict, Any, List
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from youtube_transcript_api._errors import (
@@ -7,6 +8,10 @@ from youtube_transcript_api._errors import (
     NoTranscriptAvailable,
     TranslationLanguageNotAvailable,
 )
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class TranscriptFetcher:
@@ -31,23 +36,40 @@ class TranscriptFetcher:
             TranslationLanguageNotAvailable: If English translation is not available.
         """
         try:
+            logger.debug(f"Attempting to fetch transcripts for video ID: {video_id}")
+
             # First, list available transcripts
+            logger.debug("Listing available transcripts...")
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
+            logger.debug("Available transcripts:")
+            for transcript in transcript_list:
+                logger.debug(f"- {transcript.language_code}")
 
             # Try to get English transcript directly
             try:
+                logger.debug("Attempting to find English transcript...")
                 transcript = transcript_list.find_transcript(['en'])
+                logger.debug("Found English transcript, fetching...")
                 return transcript.fetch()
             except NoTranscriptFound:
-                # If no English transcript, try to get any transcript and translate to English
-                transcript = transcript_list.find_transcript(['en-US', 'en-GB'])
-                if not transcript:
+                logger.debug("No direct English transcript found, trying alternatives...")
+                # Try US/GB English variants
+                try:
+                    transcript = transcript_list.find_transcript(['en-US', 'en-GB'])
+                    logger.debug("Found US/GB English variant, fetching...")
+                    return transcript.fetch()
+                except NoTranscriptFound:
                     # Get the first available transcript and translate it
+                    logger.debug("No English variants found, attempting translation...")
                     transcript = next(iter(transcript_list))
-                return transcript.translate('en').fetch()
+                    logger.debug(f"Translating from {transcript.language_code} to English...")
+                    return transcript.translate('en').fetch()
 
         except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable,
                 NoTranscriptAvailable, TranslationLanguageNotAvailable) as e:
+            logger.error(f"Failed to fetch transcript: {str(e)}")
             raise e
         except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
             raise Exception(f"Failed to fetch transcript: {str(e)}")
