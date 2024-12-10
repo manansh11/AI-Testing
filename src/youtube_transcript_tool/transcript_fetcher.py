@@ -1,14 +1,14 @@
 """Module for fetching YouTube video transcripts."""
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
-from youtube_transcript_api._errors import NoTranscriptFound
+from youtube_transcript_api._errors import NoTranscriptFound, VideoUnavailable
 
 
 class TranscriptFetcher:
     """Class responsible for fetching and processing YouTube transcripts."""
 
     @staticmethod
-    def get_transcript(video_id: str) -> Optional[str]:
+    def get_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
         """
         Fetch the English transcript for a YouTube video.
 
@@ -16,17 +16,16 @@ class TranscriptFetcher:
             video_id (str): The YouTube video ID.
 
         Returns:
-            Optional[str]: The transcript text if found, None otherwise.
+            Optional[List[Dict[str, Any]]]: List of transcript entries if found, None otherwise.
 
         Raises:
             TranscriptsDisabled: If transcripts are disabled for the video.
             NoTranscriptFound: If no English transcript is available.
+            VideoUnavailable: If the video is not accessible.
         """
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            transcript = transcript_list.find_transcript(['en'])
-            return transcript.fetch()
-        except (TranscriptsDisabled, NoTranscriptFound) as e:
+            return YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+        except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable) as e:
             raise e
         except Exception as e:
             raise Exception(f"Failed to fetch transcript: {str(e)}")
