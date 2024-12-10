@@ -31,7 +31,21 @@ class TranscriptFetcher:
             TranslationLanguageNotAvailable: If English translation is not available.
         """
         try:
-            return YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+            # First, list available transcripts
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
+            # Try to get English transcript directly
+            try:
+                transcript = transcript_list.find_transcript(['en'])
+                return transcript.fetch()
+            except NoTranscriptFound:
+                # If no English transcript, try to get any transcript and translate to English
+                transcript = transcript_list.find_transcript(['en-US', 'en-GB'])
+                if not transcript:
+                    # Get the first available transcript and translate it
+                    transcript = next(iter(transcript_list))
+                return transcript.translate('en').fetch()
+
         except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable,
                 NoTranscriptAvailable, TranslationLanguageNotAvailable) as e:
             raise e
