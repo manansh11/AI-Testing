@@ -38,22 +38,43 @@ class TranscriptFetcher:
         try:
             logger.debug(f"Attempting to fetch transcripts for video ID: {video_id}")
 
-            # Try to get English transcript directly
+            # First, try to list all available transcripts
             try:
-                logger.debug("Attempting to get English transcript...")
-                return YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
-            except NoTranscriptFound:
-                logger.debug("No English transcript found, trying alternatives...")
-                # Try to get any transcript and translate to English
-                transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
+                logger.debug("Listing all available transcripts...")
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
                 logger.debug("Available transcripts:")
-                for transcript in transcripts:
+                available_languages = []
+                for transcript in transcript_list:
+                    available_languages.append(transcript.language_code)
                     logger.debug(f"- {transcript.language_code}")
 
-                # Get the first available transcript and translate it
-                transcript = next(iter(transcripts))
-                logger.debug(f"Translating from {transcript.language_code} to English...")
-                return transcript.translate('en').fetch()
+                if not available_languages:
+                    logger.error("No transcripts available for this video")
+                    raise NoTranscriptAvailable()
+
+                # Try English variants first
+                english_variants = ['en', 'en-US', 'en-GB']
+                for lang in english_variants:
+                    if lang in available_languages:
+                        logger.debug(f"Found {lang} transcript, fetching...")
+                        return YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
+
+                # If no English transcript, get the first available and translate
+                logger.debug("No English transcript found, using first available transcript...")
+                first_transcript = transcript_list.find_transcript(available_languages)
+                logger.debug(f"Translating from {first_transcript.language_code} to English...")
+                return first_transcript.translate('en').fetch()
+
+            except Exception as e:
+                logger.debug(f"Error listing transcripts: {str(e)}")
+                # Fallback: try direct transcript retrieval
+                logger.debug("Attempting direct transcript retrieval...")
+                return YouTubeTranscriptApi.get_transcript(
+                    video_id,
+                    languages=['en', 'en-US', 'en-GB'],
+                    continue_after_error=True
+                )
 
         except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable,
                 NoTranscriptAvailable, TranslationLanguageNotAvailable) as e:
